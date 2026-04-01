@@ -174,7 +174,7 @@ local function FlyTo(targetCFrame)
     lastTargetPos = targetCFrame.Position
 end
 
--- ====================== SUMMON STAND======================
+-- ====================== SUMMON STAND ======================
 local function handleStandLogic(char)
     local aura = char:FindFirstChild("Aura")
     if aura and aura.Value == false then
@@ -251,7 +251,7 @@ createToggle("AUTO FARM LAIR", function(state)
                     handleStandLogic(char)
                     hrp.Velocity = Vector3.new(0,0,0)
                     
-                    -- BAY VÀ BÁM SAU LƯNG BOSS (Dùng FlyTo thay vì teleport)
+                    -- BAY VÀ BÁM SAU LƯNG BOSS
                     local bossTargetCF = myBoss.HumanoidRootPart.CFrame * CFrame.new(0, -8, 2.5) * CFrame.Angles(math.rad(90), 0, 0)
                     FlyTo(bossTargetCF)
 
@@ -261,10 +261,10 @@ createToggle("AUTO FARM LAIR", function(state)
                         VirtualUser:ClickButton1(Vector2.new(0, 0))
                     end
                 
-                -- 3. NẾU KHÔNG CÓ BOSS -> ĐI TÌM NPC ĐỂ VÀO TRẬN
+                -- 3. NẾU KHÔNG CÓ BOSS -> ĐI TÌM NPC ĐỂ VÀO TRẬN HOẶC TELE VỀ KHI XONG LAIR
                 elseif SelectedNPCData.Name ~= "NONE" then
                     if hrp.Position.X < 5000 then 
-                        -- Map chính: Phân loại tọa độ bay dựa theo NPC được chọn
+                        -- Đang ở Map chính: Bay tới vị trí NPC
                         if SelectedNPCData.Name == "i_stabman" then
                             if (hrp.Position - POS_MAIN_STABMAN).Magnitude > 15 then
                                 FlyTo(CFrame.new(POS_MAIN_STABMAN) * CFrame.new(0, 2, 0))
@@ -275,7 +275,7 @@ createToggle("AUTO FARM LAIR", function(state)
                             end
                         end
                     else
-                        -- Đã ở khu Lair: Tìm NPC gần mình nhất (Dưới 500 studs)
+                        -- Đang ở khu Lair (X >= 5000): Tìm NPC gần mình nhất (Dưới 500 studs) để bắt đầu Lair
                         local myNPC = nil
                         for _, v in pairs(workspace:GetDescendants()) do
                             if v:IsA("Model") and v.Name == SelectedNPCData.Name then
@@ -286,12 +286,25 @@ createToggle("AUTO FARM LAIR", function(state)
                             end
                         end
 
-                        if myNPC and (hrp.Position - myNPC:GetModelCFrame().Position).Magnitude > 10 then
-                            FlyTo(myNPC:GetModelCFrame() * CFrame.new(0, 2, 3))
+                        if myNPC then
+                            -- Nếu có NPC trong phòng Lair, bay tới và tương tác
+                            if (hrp.Position - myNPC:GetModelCFrame().Position).Magnitude > 10 then
+                                FlyTo(myNPC:GetModelCFrame() * CFrame.new(0, 2, 3))
+                            end
+                        else
+                            -- TRƯỜNG HỢP: XONG LAIR (Không có Boss & Không có NPC)
+                            -- Dịch chuyển thẳng về map chính để tránh bay quá xa gây lỗi
+                            if currentTween then currentTween:Cancel() end
+                            if SelectedNPCData.Name == "i_stabman" then
+                                hrp.CFrame = CFrame.new(POS_MAIN_STABMAN) * CFrame.new(0, 5, 0)
+                            elseif SelectedNPCData.Name == "Apex_Lvl500" then
+                                hrp.CFrame = CFrame.new(POS_APEX) * CFrame.new(0, 5, 0)
+                            end
+                            task.wait(1) -- Dừng 1 giây để map chính kịp load
                         end
                     end
 
-                    -- Kích hoạt NPC & Bấm Yes
+                    -- Kích hoạt NPC & Bấm Yes (Chỉ hoạt động khi ở gần NPC)
                     for _, v in pairs(workspace:GetDescendants()) do
                         if v:IsA("Model") and v.Name == SelectedNPCData.Name and (hrp.Position - v:GetModelCFrame().Position).Magnitude < 30 then
                             local r = v:FindFirstChild("Done") or v:FindFirstChild("Click") or v:FindFirstChildOfClass("RemoteEvent")
