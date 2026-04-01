@@ -1,2 +1,35 @@
-# SUR-education-activities
-for education purpose only 
+# Stand Upright: Rebooted EDUCATION 
+
+A script made by a random guy
+
+---
+
+## ✨ Core Features
+
+###  Smart Auto-Roll & Attribute Filter
+The script automatically roll ur stand and keeps the best attributes for you. No more manual clicking!
+
+* Priority Attributes: **Scourage**, **Hacker**, **GlassCannon**, and **Legendary**.
+* The script features a built-in safety for **Dio's The World**. It will **automatically stop** the moment you pull it, regardless of the attribute. *It’s not a bug, it’s a feature!*
+
+### ⚔️ Auto Lair (Newly Added)
+Effortlessly farm Lairs with automated combat logic:
+* **Apex Lvl 500 (Anubis)**.
+* **i_stabman Lvl 200 (Charged Arrow)**.
+
+*auto lair still have a little bit bug, reset ur character if it not teleport*
+---
+
+## 🚀 Execution Guide
+
+Lazy to copy all that fk long ass code use this instead
+
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ezunbanome-oss/SUR-AUTO-CARROW/refs/heads/main/main.lua"))()
+```
+
+Also this is a test script that I will change some feature (it can contain some bugs so be careful when use it)
+
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ezunbanome-oss/SUR-AUTO-CARROW/refs/heads/main/test.lua"))()
+
