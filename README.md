@@ -25,11 +25,11 @@ Effortlessly farm Lairs with automated combat logic:
 Lazy to copy all that fk long ass code use this instead
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ezunbanome-oss/SUR-AUTO-CARROW/refs/heads/main/main.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/noice123host-art/SUR-education-activities/refs/heads/main/main.lua"))()
 ```
 
 Also this is a test script that I will change some feature (it can contain some bugs so be careful when use it)
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ezunbanome-oss/SUR-AUTO-CARROW/refs/heads/main/test.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/noice123host-art/SUR-education-activities/refs/heads/main/test.lua"))()
 
