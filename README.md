@@ -1,6 +1,6 @@
 # Stand Upright: Rebooted EDUCATION 
 
-A script made by a random guy
+A EDUCATION GUILD made by a random guy
 
 ---
 
