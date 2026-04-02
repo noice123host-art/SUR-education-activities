@@ -227,6 +227,8 @@ end)
 --====================== AUTO LAIR ======================
 createToggle("AUTO FARM LAIR", function(state)
     _G.MainFarm = state
+    local wasFightingBoss = false -- Thêm biến để theo dõi trạng thái đánh boss
+
     task.spawn(function()
         while _G.MainFarm do
             pcall(function()
@@ -248,6 +250,8 @@ createToggle("AUTO FARM LAIR", function(state)
 
                 -- 2. NẾU THẤY BOSS TRONG PHÒNG MÌNH -> ĐẤM
                 if myBoss then
+                    wasFightingBoss = true -- Đánh dấu là đang trong trận đánh Boss
+                    
                     handleStandLogic(char)
                     hrp.Velocity = Vector3.new(0,0,0)
                     
@@ -261,60 +265,70 @@ createToggle("AUTO FARM LAIR", function(state)
                         VirtualUser:ClickButton1(Vector2.new(0, 0))
                     end
                 
-                -- 3. NẾU KHÔNG CÓ BOSS -> ĐI TÌM NPC ĐỂ VÀO TRẬN HOẶC TELE VỀ KHI XONG LAIR
-                elseif SelectedNPCData.Name ~= "NONE" then
-                    if hrp.Position.X < 5000 then 
-                        -- Đang ở Map chính: Bay tới vị trí NPC
-                        if SelectedNPCData.Name == "i_stabman" then
-                            if (hrp.Position - POS_MAIN_STABMAN).Magnitude > 15 then
-                                FlyTo(CFrame.new(POS_MAIN_STABMAN) * CFrame.new(0, 2, 0))
-                            end
-                        elseif SelectedNPCData.Name == "Apex_Lvl500" then
-                            if (hrp.Position - POS_APEX).Magnitude > 15 then
-                                FlyTo(CFrame.new(POS_APEX) * CFrame.new(0, 2, 0))
-                            end
-                        end
-                    else
-                        -- Đang ở khu Lair (X >= 5000): Tìm NPC gần mình nhất (Dưới 500 studs) để bắt đầu Lair
-                        local myNPC = nil
-                        for _, v in pairs(workspace:GetDescendants()) do
-                            if v:IsA("Model") and v.Name == SelectedNPCData.Name then
-                                if (hrp.Position - v:GetModelCFrame().Position).Magnitude < 500 then
-                                    myNPC = v
-                                    break
+                -- 3. NẾU KHÔNG CÓ BOSS (Boss đã chết hoặc chưa vào phòng)
+                else
+                    -- KIỂM TRA NẾU BOSS VỪA BỊ GIẾT THÌ DỪNG 1.5 GIÂY
+                    if wasFightingBoss then
+                        wasFightingBoss = false -- Reset trạng thái
+                        task.wait(1.5) -- NGHỈ 1.5 GIÂY Ở ĐÂY SAU KHI BOSS CHẾT
+                        return -- Kết thúc vòng lặp hiện tại để sang chu kỳ quét mới cho an toàn
+                    end
+
+                    -- ĐI TÌM NPC ĐỂ VÀO TRẬN HOẶC TELE VỀ KHI XONG LAIR
+                    if SelectedNPCData.Name ~= "NONE" then
+                        if hrp.Position.X < 5000 then 
+                            -- Đang ở Map chính: Bay tới vị trí NPC
+                            if SelectedNPCData.Name == "i_stabman" then
+                                if (hrp.Position - POS_MAIN_STABMAN).Magnitude > 15 then
+                                    FlyTo(CFrame.new(POS_MAIN_STABMAN) * CFrame.new(0, 2, 0))
+                                end
+                            elseif SelectedNPCData.Name == "Apex_Lvl500" then
+                                if (hrp.Position - POS_APEX).Magnitude > 15 then
+                                    FlyTo(CFrame.new(POS_APEX) * CFrame.new(0, 2, 0))
                                 end
                             end
-                        end
-
-                        if myNPC then
-                            -- Nếu có NPC trong phòng Lair, bay tới và tương tác
-                            if (hrp.Position - myNPC:GetModelCFrame().Position).Magnitude > 10 then
-                                FlyTo(myNPC:GetModelCFrame() * CFrame.new(0, 2, 3))
-                            end
                         else
-                            -- TRƯỜNG HỢP: XONG LAIR (Không có Boss & Không có NPC)
-                            -- Dịch chuyển thẳng về map chính để tránh bay quá xa gây lỗi
-                            if currentTween then currentTween:Cancel() end
-                            if SelectedNPCData.Name == "i_stabman" then
-                                hrp.CFrame = CFrame.new(POS_MAIN_STABMAN) * CFrame.new(0, 5, 0)
-                            elseif SelectedNPCData.Name == "Apex_Lvl500" then
-                                hrp.CFrame = CFrame.new(POS_APEX) * CFrame.new(0, 5, 0)
+                            -- Đang ở khu Lair (X >= 5000): Tìm NPC gần mình nhất (Dưới 500 studs) để bắt đầu Lair
+                            local myNPC = nil
+                            for _, v in pairs(workspace:GetDescendants()) do
+                                if v:IsA("Model") and v.Name == SelectedNPCData.Name then
+                                    if (hrp.Position - v:GetModelCFrame().Position).Magnitude < 500 then
+                                        myNPC = v
+                                        break
+                                    end
+                                end
                             end
-                            task.wait(1) -- Dừng 1 giây để map chính kịp load
-                        end
-                    end
 
-                    -- Kích hoạt NPC & Bấm Yes (Chỉ hoạt động khi ở gần NPC)
-                    for _, v in pairs(workspace:GetDescendants()) do
-                        if v:IsA("Model") and v.Name == SelectedNPCData.Name and (hrp.Position - v:GetModelCFrame().Position).Magnitude < 30 then
-                            local r = v:FindFirstChild("Done") or v:FindFirstChild("Click") or v:FindFirstChildOfClass("RemoteEvent")
-                            if r then r:FireServer() end
+                            if myNPC then
+                                -- Nếu có NPC trong phòng Lair, bay tới và tương tác
+                                if (hrp.Position - myNPC:GetModelCFrame().Position).Magnitude > 10 then
+                                    FlyTo(myNPC:GetModelCFrame() * CFrame.new(0, 2, 3))
+                                end
+                            else
+                                -- TRƯỜNG HỢP: XONG LAIR (Không có Boss & Không có NPC)
+                                -- Dịch chuyển thẳng về map chính để tránh bay quá xa gây lỗi
+                                if currentTween then currentTween:Cancel() end
+                                if SelectedNPCData.Name == "i_stabman" then
+                                    hrp.CFrame = CFrame.new(POS_MAIN_STABMAN) * CFrame.new(0, 5, 0)
+                                elseif SelectedNPCData.Name == "Apex_Lvl500" then
+                                    hrp.CFrame = CFrame.new(POS_APEX) * CFrame.new(0, 5, 0)
+                                end
+                                task.wait(1) -- Dừng 1 giây để map chính kịp load
+                            end
                         end
-                    end
 
-                    for _, g in pairs(playerGui:GetDescendants()) do
-                        if g:IsA("TextButton") and g.Visible and (g.Text:lower():find("yes") or g.Text:lower():find("accept")) then
-                            g:Activate()
+                        -- Kích hoạt NPC & Bấm Yes (Chỉ hoạt động khi ở gần NPC)
+                        for _, v in pairs(workspace:GetDescendants()) do
+                            if v:IsA("Model") and v.Name == SelectedNPCData.Name and (hrp.Position - v:GetModelCFrame().Position).Magnitude < 30 then
+                                local r = v:FindFirstChild("Done") or v:FindFirstChild("Click") or v:FindFirstChildOfClass("RemoteEvent")
+                                if r then r:FireServer() end
+                            end
+                        end
+
+                        for _, g in pairs(playerGui:GetDescendants()) do
+                            if g:IsA("TextButton") and g.Visible and (g.Text:lower():find("yes") or g.Text:lower():find("accept")) then
+                                g:Activate()
+                            end
                         end
                     end
                 end
