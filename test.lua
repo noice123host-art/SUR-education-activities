@@ -21,39 +21,37 @@ local keepAttri = {["Scourge"] = true, ["Hacker"] = true, ["Legendary"] = true, 
 local flySpeed = 150 
 local currentTween = nil
 
--- Tọa độ
 local POS_MAIN_STABMAN = Vector3.new(-40.3, 67.1, -468.7) 
 local POS_APEX = Vector3.new(-312.9, 66.8, 144.7)
 
 -- ====================== GIAO DIỆN CHÍNH ======================
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 650, 0, 400)
-mainFrame.Position = UDim2.new(0.5, -325, 0.5, -200)
+mainFrame.Size = UDim2.new(0, 750, 0, 500) -- Tăng kích thước bảng chính
+mainFrame.Position = UDim2.new(0.5, -375, 0.5, -250)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 mainFrame.Parent = screenGui
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
 
 -- KHUNG BÊN TRÁI (NAVIGATION)
 local leftNav = Instance.new("Frame")
-leftNav.Size = UDim2.new(0, 180, 1, -20)
+leftNav.Size = UDim2.new(0, 220, 1, -20) -- Làm cột trái rộng hơn
 leftNav.Position = UDim2.new(0, 10, 0, 10)
 leftNav.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 leftNav.Parent = mainFrame
 Instance.new("UICorner", leftNav).CornerRadius = UDim.new(0, 8)
 
 local navLayout = Instance.new("UIListLayout", leftNav)
-navLayout.Padding = UDim.new(0, 5)
+navLayout.Padding = UDim.new(0, 10)
 navLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- KHUNG BÊN PHẢI (CONTENT)
 local rightContent = Instance.new("Frame")
-rightContent.Size = UDim2.new(1, -210, 1, -20)
-rightContent.Position = UDim2.new(0, 200, 0, 10)
+rightContent.Size = UDim2.new(1, -250, 1, -20)
+rightContent.Position = UDim2.new(0, 240, 0, 10)
 rightContent.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 rightContent.Parent = mainFrame
 Instance.new("UICorner", rightContent).CornerRadius = UDim.new(0, 8)
 
--- Các trang nội dung
 local pages = {}
 local function createPage(name)
     local page = Instance.new("Frame")
@@ -65,7 +63,7 @@ local function createPage(name)
     pages[name] = page
     
     local layout = Instance.new("UIListLayout", page)
-    layout.Padding = UDim.new(0, 10)
+    layout.Padding = UDim.new(0, 15)
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     return page
 end
@@ -73,55 +71,54 @@ end
 local rollPage = createPage("RollPage")
 local lairPage = createPage("LairPage")
 
--- Hàm chuyển trang
 local function showPage(name)
     for _, p in pairs(pages) do p.Visible = false end
     if pages[name] then pages[name].Visible = true end
 end
 
--- ====================== COMPONENT UI ======================
+-- ====================== COMPONENT UI (CHỮ TO) ======================
 local function createNavButton(text, targetPage)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0, 45)
+    btn.Size = UDim2.new(0.9, 0, 0, 60) -- Nút to hơn
     btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     btn.Text = text
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
+    btn.TextSize = 20 -- CHỮ TO HƠN
     btn.Parent = leftNav
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     
-    btn.MouseButton1Click:Connect(function()
-        showPage(targetPage)
-    end)
+    btn.MouseButton1Click:Connect(function() showPage(targetPage) end)
 end
 
 local function createToggle(parent, text, callback)
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(0.9, 0, 0, 50)
+    container.Size = UDim2.new(0.95, 0, 0, 70) -- Khung chứa to hơn
     container.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     container.Parent = parent
-    Instance.new("UICorner", container).CornerRadius = UDim.new(0, 5)
+    Instance.new("UICorner", container).CornerRadius = UDim.new(0, 8)
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.6, 0, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Position = UDim2.new(0, 15, 0, 0)
     label.Text = text
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.BackgroundTransparency = 1
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Font = Enum.Font.GothamBold
+    label.TextSize = 22 -- CHỮ TO HƠN
     label.Parent = container
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 60, 0, 25)
-    btn.Position = UDim2.new(1, -70, 0.5, -12)
+    btn.Size = UDim2.new(0, 80, 0, 40)
+    btn.Position = UDim2.new(1, -95, 0.5, -20)
     btn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
     btn.Text = "OFF"
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 18 -- CHỮ TO HƠN
     btn.Parent = container
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
     local state = false
     btn.MouseButton1Click:Connect(function()
@@ -133,20 +130,21 @@ local function createToggle(parent, text, callback)
 end
 
 -- ====================== NỘI DUNG TRANG ROLL STAND ======================
-createToggle(rollPage, "AUTO ROLL ENABLE", function(s) _G.AutoRoll = s end)
+createToggle(rollPage, "AUTO ROLL", function(s) _G.AutoRoll = s end)
 
 local arrowSelBtn = Instance.new("TextButton")
-arrowSelBtn.Size = UDim2.new(0.9, 0, 0, 40)
+arrowSelBtn.Size = UDim2.new(0.95, 0, 0, 60)
 arrowSelBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 100)
-arrowSelBtn.Text = "USING: " .. arrowName
+arrowSelBtn.Text = "USING: " .. arrowName:upper()
 arrowSelBtn.TextColor3 = Color3.fromRGB(255,255,255)
 arrowSelBtn.Font = Enum.Font.GothamBold
+arrowSelBtn.TextSize = 20 -- CHỮ TO HƠN
 arrowSelBtn.Parent = rollPage
-Instance.new("UICorner", arrowSelBtn).CornerRadius = UDim.new(0, 5)
+Instance.new("UICorner", arrowSelBtn).CornerRadius = UDim.new(0, 8)
 
 arrowSelBtn.MouseButton1Click:Connect(function()
     arrowName = (arrowName == arrowOptions[1]) and arrowOptions[2] or arrowOptions[1]
-    arrowSelBtn.Text = "USING: " .. arrowName
+    arrowSelBtn.Text = "USING: " .. arrowName:upper()
 end)
 
 -- ====================== NỘI DUNG TRANG LAIR ======================
@@ -154,13 +152,14 @@ createToggle(lairPage, "AUTO FARM LAIR", function(s) _G.MainFarm = s end)
 
 local function createNPCBtn(displayName, internalName)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0, 40)
+    btn.Size = UDim2.new(0.95, 0, 0, 60)
     btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Text = displayName
+    btn.Text = displayName:upper()
     btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 20 -- CHỮ TO HƠN
     btn.Parent = lairPage
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
     btn.MouseButton1Click:Connect(function()
         for _, v in pairs(lairPage:GetChildren()) do
@@ -177,9 +176,9 @@ createNPCBtn("Istabman Lvl 200", "i_stabman")
 -- Khởi tạo nút Menu
 createNavButton("ROLL STAND", "RollPage")
 createNavButton("AUTO LAIR", "LairPage")
-showPage("RollPage") -- Mặc định hiện trang Roll
+showPage("RollPage")
 
--- ====================== HÀM LOGIC (FLY/ROLL/LAIR) ======================
+-- ====================== LOGIC (GIỮ NGUYÊN) ======================
 local function FlyTo(targetCFrame)
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -191,7 +190,6 @@ local function FlyTo(targetCFrame)
     currentTween:Play()
 end
 
--- Vòng lặp Auto Roll
 task.spawn(function()
     while true do
         if _G.AutoRoll then
@@ -220,7 +218,6 @@ task.spawn(function()
     end
 end)
 
--- Vòng lặp Auto Lair (Đã tích hợp dừng 1.5s)
 task.spawn(function()
     local wasFightingBoss = false
     while true do
@@ -246,7 +243,7 @@ task.spawn(function()
                 else
                     if wasFightingBoss then
                         wasFightingBoss = false
-                        task.wait(1.5) -- DỪNG 1.5 GIÂY SAU KHI BOSS CHẾT
+                        task.wait(1.5)
                     end
                     
                     if SelectedNPCData.Name ~= "NONE" then
@@ -254,7 +251,6 @@ task.spawn(function()
                             local pos = SelectedNPCData.Name == "i_stabman" and POS_MAIN_STABMAN or POS_APEX
                             if (hrp.Position - pos).Magnitude > 15 then FlyTo(CFrame.new(pos)) end
                         else
-                            -- Logic trong khu vực Lair
                             for _, v in pairs(workspace:GetDescendants()) do
                                 if v:IsA("Model") and v.Name == SelectedNPCData.Name and (hrp.Position - v:GetModelCFrame().Position).Magnitude < 500 then
                                     FlyTo(v:GetModelCFrame() * CFrame.new(0, 2, 3))
@@ -264,7 +260,6 @@ task.spawn(function()
                                 end
                             end
                         end
-                        -- Click Yes
                         for _, g in pairs(playerGui:GetDescendants()) do
                             if g:IsA("TextButton") and g.Visible and (g.Text:lower():find("yes") or g.Text:lower():find("accept")) then g:Activate() end
                         end
@@ -276,7 +271,6 @@ task.spawn(function()
     end
 end)
 
--- Noclip & Phím tắt L
 RunService.Stepped:Connect(function()
     if (_G.MainFarm or _G.AutoRoll) and player.Character then
         for _, v in pairs(player.Character:GetDescendants()) do
