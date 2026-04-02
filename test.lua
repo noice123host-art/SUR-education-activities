@@ -6,7 +6,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 -- Xóa Menu cũ nếu có
-if playerGui:FindFirstChild("RebootedMenuV2") then playerGui.RebootedMenuV2:Destroy() end
+if playerGui:FindFirstChild("RebootedMenu") then playerGui.RebootedMenuV2:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "RebootedMenuV2"
