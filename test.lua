@@ -5,13 +5,18 @@ local VirtualUser = game:GetService("VirtualUser")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+-- Xóa Menu cũ nếu có để tránh trùng lặp
 if playerGui:FindFirstChild("RebootedMenu") then playerGui.RebootedMenu:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "RebootedMenu"
+screenGui.ResetOnSpawn = false -- QUAN TRỌNG: Giữ UI không bị xóa khi Reset/Chết
 screenGui.Parent = playerGui
 
 -- ====================== BIẾN (VARIABLES) ======================
+_G.AutoRoll = _G.AutoRoll or false
+_G.MainFarm = _G.MainFarm or false
+
 local SelectedNPCData = { Name = "NONE" }
 local arrowOptions = {"Charged Arrow", "Stand Arrow"}
 local arrowName = arrowOptions[1]
@@ -21,7 +26,7 @@ local currentTween = nil
 local POS_MAIN_STABMAN = Vector3.new(-40.3, 67.1, -468.7) 
 local POS_APEX = Vector3.new(-312.9, 66.8, 144.7)
 
--- ====================== GIAO DIỆN CHÍNH (UI TO) ======================
+-- ====================== GIAO DIỆN CHÍNH ======================
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 750, 0, 500)
 mainFrame.Position = UDim2.new(0.5, -375, 0.5, -250)
@@ -48,7 +53,6 @@ rightFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 rightFrame.Parent = mainFrame
 Instance.new("UICorner", rightFrame).CornerRadius = UDim.new(0, 12)
 
--- Các Container để chứa chức năng từng trang
 local rollContainer = Instance.new("Frame")
 rollContainer.Size = UDim2.new(1, 0, 1, 0); rollContainer.BackgroundTransparency = 1; rollContainer.Parent = rightFrame; rollContainer.Visible = true
 
@@ -72,20 +76,21 @@ local function createMenuBtn(txt, target)
     btn.MouseButton1Click:Connect(function() showPage(target) end)
 end
 
-local function createToggle(parent, txt, callback)
+local function createToggle(parent, txt, globalVar, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.95, 0, 0, 70)
     btn.Text = "  " .. txt; btn.TextSize = 24; btn.Font = "GothamBold"
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); btn.TextColor3 = Color3.new(1,1,1); btn.TextXAlignment = "Left"
+    btn.BackgroundColor3 = _G[globalVar] and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = Color3.new(1,1,1); btn.TextXAlignment = "Left"
     btn.Parent = parent
     Instance.new("UICorner", btn)
     
-    local state = false
     btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.BackgroundColor3 = state and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(50, 50, 50)
-        callback(state)
+        _G[globalVar] = not _G[globalVar]
+        btn.BackgroundColor3 = _G[globalVar] and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(50, 50, 50)
+        if callback then callback(_G[globalVar]) end
     end)
+    
     if not parent:FindFirstChildOfClass("UIListLayout") then
         local l = Instance.new("UIListLayout", parent); l.Padding = UDim.new(0, 15); l.HorizontalAlignment = "Center"
     end
@@ -96,7 +101,7 @@ createMenuBtn("ROLL STAND", rollContainer)
 createMenuBtn("AUTO LAIR", lairContainer)
 
 -- ====================== TRANG 1: AUTO ROLL ======================
-createToggle(rollContainer, "ENABLE ROLL", function(s) _G.AutoRoll = s end)
+createToggle(rollContainer, "ENABLE ROLL", "AutoRoll")
 
 local arrowBtn = Instance.new("TextButton")
 arrowBtn.Size = UDim2.new(0.95, 0, 0, 60); arrowBtn.TextSize = 20; arrowBtn.Font = "GothamBold"
@@ -112,14 +117,27 @@ task.spawn(function()
     while true do
         if _G.AutoRoll then
             pcall(function()
+                local char = player.Character
+                if not char or not char:FindFirstChild("Humanoid") then return end
+                
                 local data = player:FindFirstChild("Data")
-                if data.Stand.Value == "DIO's The World" or keepAttri[data.Attri.Value] then _G.AutoRoll = false return end
+                if data.Stand.Value == "DIO's The World" or keepAttri[data.Attri.Value] then 
+                    _G.AutoRoll = false 
+                    return 
+                end
+                
                 local toolName = (data.Stand.Value == "" or data.Stand.Value == "None") and arrowName or "Rokakaka"
-                local tool = player.Backpack:FindFirstChild(toolName) or player.Character:FindFirstChild(toolName)
+                local tool = player.Backpack:FindFirstChild(toolName) or char:FindFirstChild(toolName)
+                
                 if tool then
-                    player.Character.Humanoid:EquipTool(tool)
+                    char.Humanoid:EquipTool(tool)
                     tool:Activate()
-                    if toolName == "Rokakaka" then task.wait(0.3); for _, v in pairs(playerGui:GetDescendants()) do if v:IsA("TextButton") and v.Text:lower() == "yes" then v:Activate() end end end
+                    if toolName == "Rokakaka" then 
+                        task.wait(0.3)
+                        for _, v in pairs(playerGui:GetDescendants()) do 
+                            if v:IsA("TextButton") and v.Text:lower() == "yes" then v:Activate() end 
+                        end 
+                    end
                 end
             end)
         end
@@ -127,8 +145,8 @@ task.spawn(function()
     end
 end)
 
--- ====================== TRANG 2: AUTO LAIR (LOGIC CỦA BẠN) ======================
-createToggle(lairContainer, "ENABLE LAIR", function(s) _G.MainFarm = s end)
+-- ====================== TRANG 2: AUTO LAIR ======================
+createToggle(lairContainer, "ENABLE LAIR", "MainFarm")
 
 local function npcSelect(name, id)
     local btn = Instance.new("TextButton")
@@ -146,23 +164,29 @@ end
 npcSelect("Apex LVL 500", "Apex_Lvl500")
 npcSelect("Istabman Lvl 200", "i_stabman")
 
--- HÀM FLY CHUNG
 local function FlyTo(targetCF)
-    local hrp = player.Character.HumanoidRootPart
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
     local dist = (hrp.Position - targetCF.Position).Magnitude
-    if dist < 3 then if currentTween then currentTween:Cancel() end hrp.CFrame = targetCF return end
+    if dist < 3 then 
+        if currentTween then currentTween:Cancel() end 
+        hrp.CFrame = targetCF 
+        return 
+    end
     if currentTween then currentTween:Cancel() end
     currentTween = TweenService:Create(hrp, TweenInfo.new(dist/flySpeed, Enum.EasingStyle.Linear), {CFrame = targetCF})
     currentTween:Play()
 end
 
--- VÒNG LẶP AUTO LAIR (GIỮ NGUYÊN LOGIC BẠN GỬI)
 task.spawn(function()
     local wasFightingBoss = false
     while true do
         if _G.MainFarm then
             pcall(function()
-                local char = player.Character; local hrp = char.HumanoidRootPart
+                local char = player.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                local hrp = char.HumanoidRootPart
                 
                 -- 1. TÌM BOSS
                 local myBoss = nil
@@ -189,14 +213,12 @@ task.spawn(function()
                         VirtualUser:ClickButton1(Vector2.new(0, 0))
                     end
                 else
-                    -- 3. LOGIC SAU KHI BOSS CHẾT (DỪNG 1.5S)
                     if wasFightingBoss then
                         wasFightingBoss = false
                         task.wait(1.5)
                         return 
                     end
 
-                    -- LOGIC DI CHUYỂN & NPC
                     if SelectedNPCData.Name ~= "NONE" then
                         if hrp.Position.X < 5000 then 
                             local p = SelectedNPCData.Name == "i_stabman" and POS_MAIN_STABMAN or POS_APEX
@@ -239,10 +261,14 @@ end)
 -- ====================== HỆ THỐNG PHỤ ======================
 RunService.Stepped:Connect(function()
     if (_G.MainFarm or _G.AutoRoll) and player.Character then
-        for _, v in pairs(player.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
+        for _, v in pairs(player.Character:GetDescendants()) do 
+            if v:IsA("BasePart") then v.CanCollide = false end 
+        end
     end
 end)
 
 UserInputService.InputBegan:Connect(function(i, g)
-    if not g and i.KeyCode == Enum.KeyCode.L then mainFrame.Visible = not mainFrame.Visible end
+    if not g and i.KeyCode == Enum.KeyCode.L then 
+        mainFrame.Visible = not mainFrame.Visible 
+    end
 end)
