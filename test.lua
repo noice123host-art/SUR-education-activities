@@ -9,7 +9,7 @@ local TweenService = game:GetService("TweenService")
 if playerGui:FindFirstChild("RebootedMenu") then playerGui.RebootedMenuV2:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "RebootedMenuV2"
+screenGui.Name = "RebootedMenu"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
