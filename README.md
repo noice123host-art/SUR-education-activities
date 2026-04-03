@@ -17,7 +17,7 @@ Effortlessly farm Lairs with automated combat logic:
 * **Apex Lvl 500 (Anubis)**.
 * **i_stabman Lvl 200 (Charged Arrow)**.
 
-*auto lair still have a little bit bug, reset ur character if it not teleport*
+*if ur auto lair doesn't fly ,you would like to choose the another lair(wait till it fly) then choose back the lair u want*
 ---
 
 ## 🚀 Execution Guide
