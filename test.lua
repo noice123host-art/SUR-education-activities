@@ -6,6 +6,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local ProtectGui = (gethui and gethui()) or CoreGui
 
@@ -180,7 +181,7 @@ local function createToggle(parent, txt, globalVar)
     label.Size = UDim2.new(0.6, 0, 1, 0)
     label.Position = UDim2.new(0, 15, 0, 0)
     label.Text = txt
-    label.TextSize = 16
+    label.TextSize = 18
     label.Font = Enum.Font.GothamBold
     label.TextColor3 = Color3.new(1, 1, 1)
     label.TextXAlignment = Enum.TextXAlignment.Left
@@ -188,15 +189,15 @@ local function createToggle(parent, txt, globalVar)
     label.Parent = holder
     
     local switchBg = Instance.new("Frame")
-    switchBg.Size = UDim2.new(0, 50, 0, 26)
-    switchBg.Position = UDim2.new(1, -65, 0.5, -13)
+    switchBg.Size = UDim2.new(0, 60, 0, 30)
+    switchBg.Position = UDim2.new(1, -75, 0.5, -15)
     switchBg.BackgroundColor3 = _G[globalVar] and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(60, 60, 60)
     switchBg.Parent = holder
     Instance.new("UICorner", switchBg).CornerRadius = UDim.new(1, 0)
     
     local switchCircle = Instance.new("Frame")
-    switchCircle.Size = UDim2.new(0, 20, 0, 20)
-    switchCircle.Position = _G[globalVar] and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
+    switchCircle.Size = UDim2.new(0, 24, 0, 24)
+    switchCircle.Position = _G[globalVar] and UDim2.new(1, -27, 0.5, -12) or UDim2.new(0, 3, 0.5, -12)
     switchCircle.BackgroundColor3 = Color3.new(1, 1, 1)
     switchCircle.Parent = switchBg
     Instance.new("UICorner", switchCircle).CornerRadius = UDim.new(1, 0)
@@ -205,14 +206,30 @@ local function createToggle(parent, txt, globalVar)
     clickBtn.Size = UDim2.new(1, 0, 1, 0)
     clickBtn.BackgroundTransparency = 1
     clickBtn.Text = ""
+    clickBtn.ZIndex = 10 -- Đảm bảo nằm trên cùng để nhận click
+    clickBtn.Active = true
     clickBtn.Parent = holder
     
+    -- Cập nhật UI liên tục nếu biến bị thay đổi từ bên ngoài (Logic tự tắt)
+    task.spawn(function()
+        while task.wait(0.5) do
+            if not holder or not holder.Parent then break end
+            local isOn = _G[globalVar]
+            local targetColor = isOn and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(60, 60, 60)
+            local targetPos = isOn and UDim2.new(1, -27, 0.5, -12) or UDim2.new(0, 3, 0.5, -12)
+            
+            if switchBg.BackgroundColor3 ~= targetColor then
+                TweenService:Create(switchBg, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
+                TweenService:Create(switchCircle, TweenInfo.new(0.2), {Position = targetPos}):Play()
+            end
+        end
+    end)
+
     clickBtn.MouseButton1Click:Connect(function()
         _G[globalVar] = not _G[globalVar]
-        local isOn = _G[globalVar]
-        TweenService:Create(switchBg, TweenInfo.new(0.2), {BackgroundColor3 = isOn and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(60, 60, 60)}):Play()
-        TweenService:Create(switchCircle, TweenInfo.new(0.2), {Position = isOn and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)}):Play()
     end)
+    
+    return holder
 end
 
 -- === THIẾT LẬP CÁC TRANG CÒN LẠI ===
@@ -224,43 +241,65 @@ arrowFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 arrowFrame.Parent = rollContainer
 Instance.new("UICorner", arrowFrame).CornerRadius = UDim.new(0, 10)
 
+local arrowButtons = {} 
+
 local function createArrowBtn(name, xPos)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.45, 0, 0, 40)
     btn.Position = UDim2.new(xPos, 0, 0.25, 0)
     btn.Text = name:upper()
-    btn.TextSize = 16 -- <=== Thêm dòng này để phóng to chữ
+    btn.TextSize = 16 
     btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.Font = Enum.Font.GothamBold
     btn.Parent = arrowFrame
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    
+    table.insert(arrowButtons, btn) 
+    
+    if arrowName == name then
+        btn.BackgroundColor3 = Color3.fromRGB(0, 120, 255) 
+    end
+
     btn.MouseButton1Click:Connect(function() 
+        for _, otherBtn in pairs(arrowButtons) do
+            otherBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        end
         arrowName = name 
         btn.BackgroundColor3 = Color3.fromRGB(0, 120, 255) 
     end)
 end
-
 createArrowBtn("Charged Arrow", 0.03)
 createArrowBtn("Stand Arrow", 0.52)
 
 createToggle(lairContainer, "AUTO FARM", "MainFarm")
+local lairButtons = {}
+
 local function npcSelect(name, id)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 50)
     btn.Text = name:upper()
-    btn.TextSize = 16 -- <=== Thêm dòng này để phóng to chữ
+    btn.TextSize = 16 
     btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.Font = Enum.Font.GothamBold
     btn.Parent = lairContainer
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    
+    table.insert(lairButtons, btn)
+    
+    if SelectedNPCData.Name == id then
+        btn.BackgroundColor3 = Color3.fromRGB(0, 120, 255) 
+    end
+
     btn.MouseButton1Click:Connect(function() 
+        for _, otherBtn in pairs(lairButtons) do
+            otherBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        end
         SelectedNPCData.Name = id 
         btn.BackgroundColor3 = Color3.fromRGB(0, 120, 255) 
     end)
 end
-
 npcSelect("Apex LVL 500", "Apex_Lvl500")
 npcSelect("Istabman Lvl 200", "i_stabman")
 
@@ -291,7 +330,7 @@ task.spawn(function()
                 local data = player:FindFirstChild("Data")
                 local stand = data:FindFirstChild("Stand")
                 local attr = data:FindFirstChild("Attri")
-                if stand and (stand.Value == "DIO's The World" or (attr and keepAttri[attr.Value])) then
+                if standData and (standData.Value == "DIO's The World" or (attriData and keepAttri[attriData.Value])) then
                     _G.AutoRoll = false return
                 end
                 local toolName = (not stand or stand.Value == "" or stand.Value == "None") and arrowName or "Rokakaka"
@@ -311,40 +350,114 @@ task.spawn(function()
     end
 end)
 
--- 2. Auto Lair (Fix kẹt NPC)
+-- ====================== FUNCTION SUMMON STAND ======================
+local function handleStandLogic(char)
+    local aura = char:FindFirstChild("Aura")
+    -- Nếu aura.Value == false nghĩa là Stand chưa lấy ra
+    if aura and aura.Value == false then
+        if char:FindFirstChild("StandEvents") and char.StandEvents:FindFirstChild("Summon") then
+            char.StandEvents.Summon:FireServer()
+            task.wait(0.5) -- Đợi một chút để Stand kịp xuất hiện
+        end
+    end
+end
+
+-- ====================== AUTO FARM LAIR + SUMMON ======================
 task.spawn(function()
     local wasFightingBoss = false
-    while task.wait(0.5) do
+    while task.wait(0.2) do 
         if _G.MainFarm then
             pcall(function()
                 local char = player.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
                 local hrp = char.HumanoidRootPart
                 
+                -- GỌI STAND RA TRƯỚC KHI LÀM BẤT CỨ VIỆC GÌ
+                handleStandLogic(char)
+
+                -- 1. TÌM BOSS
                 local myBoss = nil
                 local living = workspace:FindFirstChild("Living")
                 if living then
                     for _, v in pairs(living:GetChildren()) do
-                        if v.Name == "Boss" and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and (hrp.Position - v.HumanoidRootPart.Position).Magnitude < 600 then
-                            myBoss = v break
+                        if v.Name == "Boss" and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
+                            if v.Humanoid.Health > 0 and (hrp.Position - v.HumanoidRootPart.Position).Magnitude < 500 then
+                                myBoss = v 
+                                break
+                            end
                         end
                     end
                 end
 
+                -- 2. ĐÁNH BOSS
                 if myBoss then
                     wasFightingBoss = true
                     hrp.Velocity = Vector3.new(0,0,0)
-                    FlyTo(myBoss.HumanoidRootPart.CFrame * CFrame.new(0, -8, 2.5) * CFrame.Angles(math.rad(90), 0, 0))
-                    if char:FindFirstChild("StandEvents") then char.StandEvents.M1:FireServer() else VirtualUser:ClickButton1(Vector2.new(0,0)) end
+                    
+                    local bossTargetCF = myBoss.HumanoidRootPart.CFrame * CFrame.new(0, -8, 2.5) * CFrame.Angles(math.rad(90), 0, 0)
+                    FlyTo(bossTargetCF)
+                    
+                    if char:FindFirstChild("StandEvents") and char.StandEvents:FindFirstChild("M1") then 
+                        char.StandEvents.M1:FireServer() 
+                    else 
+                        VirtualUser:ClickButton1(Vector2.new(0,0)) 
+                    end
+                
+                -- 3. DI CHUYỂN & TƯƠNG TÁC NPC
                 else
-                    if wasFightingBoss then wasFightingBoss = false task.wait(1.5) end
+                    if wasFightingBoss then 
+                        wasFightingBoss = false 
+                        task.wait(1.5) 
+                        return 
+                    end
+                    
                     if SelectedNPCData.Name ~= "NONE" then
-                        local p = SelectedNPCData.Name == "i_stabman" and POS_MAIN_STABMAN or POS_APEX
-                        if (hrp.Position - p).Magnitude > 15 then 
-                            FlyTo(CFrame.new(p) * CFrame.new(0, 10, 0)) -- Bay cao hơn đầu NPC
+                        local p_main = SelectedNPCData.Name == "i_stabman" and POS_MAIN_STABMAN or POS_APEX
+                        
+                        if hrp.Position.X < 5000 then 
+                            -- Ở Map chính
+                            if (hrp.Position - p_main).Magnitude > 15 then
+                                FlyTo(CFrame.new(p_main) * CFrame.new(0, 2, 0))
+                            end
+                        else
+                            -- Ở trong Lair
+                            local myNPC = nil
+                            for _, v in pairs(workspace:GetDescendants()) do
+                                if v:IsA("Model") and v.Name == SelectedNPCData.Name then
+                                    if (hrp.Position - v:GetModelCFrame().Position).Magnitude < 500 then
+                                        myNPC = v
+                                        break
+                                    end
+                                end
+                            end
+
+                            if myNPC then
+                                if (hrp.Position - myNPC:GetModelCFrame().Position).Magnitude > 10 then
+                                    FlyTo(myNPC:GetModelCFrame() * CFrame.new(0, 2, 3))
+                                end
+                            else
+                                -- Xong Lair -> Về map chính
+                                if currentTween then currentTween:Cancel() end
+                                hrp.CFrame = CFrame.new(p_main) * CFrame.new(0, 5, 0)
+                                task.wait(1)
+                            end
                         end
-                        if (hrp.Position - p).Magnitude < 25 then
-                            for _, g in pairs(playerGui:GetDescendants()) do
-                                if g:IsA("TextButton") and g.Visible and (g.Text:lower():find("yes") or g.Text:lower():find("accept")) then g:Activate() end
+
+                        -- Kích hoạt NPC (Fix lỗi Interact)
+                        for _, v in pairs(workspace:GetDescendants()) do
+                            if v:IsA("Model") and v.Name == SelectedNPCData.Name and (hrp.Position - v:GetModelCFrame().Position).Magnitude < 30 then
+                                local r = v:FindFirstChild("Done") or v:FindFirstChild("Click") or v:FindFirstChildOfClass("RemoteEvent")
+                                if r then r:FireServer() end
+                            end
+                        end
+
+                        -- Auto nhấn Yes/Accept
+                        for _, v in pairs(playerGui:GetDescendants()) do
+                            if v:IsA("TextButton") and v.Visible then
+                                local t = v.Text:lower()
+                                if t:find("yes") or t:find("accept") or t:find("ok") then
+                                    v:Activate()
+                                end
                             end
                         end
                     end
@@ -353,54 +466,58 @@ task.spawn(function()
         end
     end
 end)
+-- Hàm hỗ trợ click GUI chính xác hơn
+function GuiClick(btn)
+    pcall(function()
+        local pos = btn.AbsolutePosition
+        local size = btn.AbsoluteSize
+        VirtualInputManager:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2 + 50, 0, true, game, 1)
+        VirtualInputManager:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2 + 50, 0, false, game, 1)
+    end)
+end
 
--- === LOGIC AUTO SKILL (GIỮ PHÍM E LIÊN TỤC ĐẾN KHI TẮT) ===
+-- ====================== LOGIC AUTO SKILL (FIX GIỮ E) ======================
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local isHoldingE = false
 
 task.spawn(function()
-    while task.wait(0.1) do -- Chạy nhanh để check trạng thái toggle
+    while true do
+        task.wait(0.1) -- Tốc độ quét trạng thái
         pcall(function()
-            -- Xử lý GIỮ PHÍM E (Sửa lỗi không cast lại chiêu)
+            -- 1. XỬ LÝ GIỮ PHÍM E (Dành cho chiêu vận công/gồng)
             if _G.AutoSkillE then 
-                -- Gửi tín hiệu nhấn phím liên tục mỗi 0.1s thay vì chỉ gửi 1 lần.
-                -- Điều này giúp game nhận diện lại nút E ngay khi cooldown kết thúc
-                -- hoặc chiêu bị ngắt, đảm bảo E được spam/giữ liên tục nhất có thể.
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                isHoldingE = true
+                if not isHoldingE then
+                    -- Chỉ gửi tín hiệu nhấn xuống 1 lần duy nhất khi bật toggle
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                    isHoldingE = true
+                end
+                -- Ghi chú: Một số game yêu cầu gửi lại tín hiệu "giữ" định kỳ
+                -- Nếu game của bạn bị nhả E sau vài giây, hãy bỏ comment dòng dưới:
+                -- VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
             else
                 if isHoldingE then
+                    -- Gửi tín hiệu nhả phím khi tắt toggle
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
                     isHoldingE = false
                 end
             end
-            
-            -- LƯU Ý: Nếu game cancel skill E khi bạn dùng skill khác, 
-            -- bạn nên cân nhắc tắt bớt AutoSkill khác khi đang muốn giữ E.
-            if _G.AutoSkillR then 
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
-                task.wait(0.05)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
-            end
-            if _G.AutoSkillT then 
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
-                task.wait(0.05)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
-            end
-            if _G.AutoSkillF then 
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-                task.wait(0.05)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-            end
-            if _G.AutoSkillZ then 
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Z, false, game)
-                task.wait(0.05)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Z, false, game)
-            end
-            if _G.AutoSkillX then 
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.X, false, game)
-                task.wait(0.05)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.X, false, game)
+
+            -- 2. XỬ LÝ SPAM CÁC PHÍM KHÁC (R, T, F, Z, X)
+            -- Lưu ý: Các chiêu này sẽ được nhấn khi E đang được giữ
+            local skills = {
+                {toggle = _G.AutoSkillR, key = Enum.KeyCode.R},
+                {toggle = _G.AutoSkillT, key = Enum.KeyCode.T},
+                {toggle = _G.AutoSkillF, key = Enum.KeyCode.F},
+                {toggle = _G.AutoSkillZ, key = Enum.KeyCode.Z},
+                {toggle = _G.AutoSkillX, key = Enum.KeyCode.X},
+            }
+
+            for _, skill in ipairs(skills) do
+                if skill.toggle then
+                    VirtualInputManager:SendKeyEvent(true, skill.key, false, game)
+                    task.wait(0.02) -- Nhấn cực nhanh
+                    VirtualInputManager:SendKeyEvent(false, skill.key, false, game)
+                end
             end
         end)
     end
@@ -409,10 +526,16 @@ end)
 -- 4. Hệ thống (NoClip & Hotkey L)
 RunService.Stepped:Connect(function()
     if (_G.MainFarm or _G.AutoRoll) and player.Character then
-        for _, v in pairs(player.Character:GetChildren()) do if v:IsA("BasePart") then v.CanCollide = false end end
+        for _, v in pairs(player.Character:GetChildren()) do 
+            if v:IsA("BasePart") then 
+                v.CanCollide = false 
+            end 
+        end
     end
 end)
 
 UserInputService.InputBegan:Connect(function(i, g)
-    if not g and i.KeyCode == Enum.KeyCode.L then mainFrame.Visible = not mainFrame.Visible end
+    if not g and i.KeyCode == Enum.KeyCode.L then 
+        mainFrame.Visible = not mainFrame.Visible 
+    end
 end)
