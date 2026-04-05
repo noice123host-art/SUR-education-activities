@@ -58,11 +58,17 @@ rightFrame.Parent = mainFrame
 Instance.new("UICorner", rightFrame).CornerRadius = UDim.new(0, 12)
 
 -- === CONTAINERS CỦA TỪNG TRANG ===
+local infoContainer = Instance.new("Frame")
+infoContainer.Size = UDim2.new(1, 0, 1, 0)
+infoContainer.BackgroundTransparency = 1
+infoContainer.Parent = rightFrame
+infoContainer.Visible = true -- Tab Info sẽ hiện đầu tiên
+
 local rollContainer = Instance.new("Frame")
 rollContainer.Size = UDim2.new(1, 0, 1, 0)
 rollContainer.BackgroundTransparency = 1
 rollContainer.Parent = rightFrame
-rollContainer.Visible = true
+rollContainer.Visible = false
 
 local lairContainer = Instance.new("Frame")
 lairContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -77,6 +83,10 @@ skillContainer.Parent = rightFrame
 skillContainer.Visible = false
 
 -- UIListLayout cho các container bên phải
+local infoLayout = Instance.new("UIListLayout", infoContainer)
+infoLayout.Padding = UDim.new(0, 12)
+infoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
 local rollLayout = Instance.new("UIListLayout", rollContainer)
 rollLayout.Padding = UDim.new(0, 12)
 rollLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -90,7 +100,7 @@ skillLayout.Padding = UDim.new(0, 8)
 skillLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- === NÚT MENU BÊN TRÁI ===
-local menuOrder = {[rollContainer] = 1, [lairContainer] = 2, [skillContainer] = 3}
+local menuOrder = {[infoContainer] = 1, [rollContainer] = 2, [lairContainer] = 3, [skillContainer] = 4}
 local function createMenuBtn(txt, target)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.9, 0, 0, 55)
@@ -164,6 +174,7 @@ end
 
 -- === HÀM CHUYỂN TRANG ===
 local function showPage(page)
+    infoContainer.Visible = false
     rollContainer.Visible = false
     lairContainer.Visible = false
     skillContainer.Visible = false
@@ -171,12 +182,116 @@ local function showPage(page)
 end
 
 -- === TẠO MENU ===
-local rollBtn = createMenuBtn("ROLL STAND", rollContainer)
-local lairBtn = createMenuBtn("AUTO LAIR", lairContainer)
-local skillBtn = createMenuBtn("AUTO SKILL", skillContainer)
+local infoBtn = createMenuBtn("Info", infoContainer)
+local rollBtn = createMenuBtn("Auto Roll Stand", rollContainer)
+local lairBtn = createMenuBtn("Auto Lair", lairContainer)
+local skillBtn = createMenuBtn("Auto Skill", skillContainer)
+
+infoBtn.MouseButton1Click:Connect(function() showPage(infoContainer) end)
 rollBtn.MouseButton1Click:Connect(function() showPage(rollContainer) end)
 lairBtn.MouseButton1Click:Connect(function() showPage(lairContainer) end)
 skillBtn.MouseButton1Click:Connect(function() showPage(skillContainer) end)
+
+-- === NÂNG CẤP INFO CONTAINER THÀNH SCROLLING FRAME ===
+-- Thay thế đoạn khởi tạo infoContainer cũ bằng đoạn này:
+local infoContainer = Instance.new("ScrollingFrame")
+infoContainer.Size = UDim2.new(1, -10, 1, -10)
+infoContainer.Position = UDim2.new(0, 5, 0, 5)
+infoContainer.BackgroundTransparency = 1
+infoContainer.ScrollBarThickness = 4
+infoContainer.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
+infoContainer.CanvasSize = UDim2.new(0, 0, 0, 0) -- Sẽ tự động mở rộng nhờ AutomaticCanvasSize
+infoContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+infoContainer.Parent = rightFrame
+infoContainer.Visible = true
+
+local infoLayout = Instance.new("UIListLayout", infoContainer)
+infoLayout.Padding = UDim.new(0, 8)
+infoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- === NỘI DUNG TRONG TRANG INFO ===
+
+-- 1. Title & User
+local infoTitle = Instance.new("TextLabel")
+infoTitle.Size = UDim2.new(0.9, 0, 0, 40)
+infoTitle.Text = "Stand Upright: Rebooted"
+infoTitle.TextSize = 22
+infoTitle.Font = Enum.Font.GothamBold
+infoTitle.TextColor3 = Color3.fromRGB(0, 120, 255)
+infoTitle.BackgroundTransparency = 1
+infoTitle.Parent = infoContainer
+
+local infoPlayer = Instance.new("TextLabel")
+infoPlayer.Size = UDim2.new(0.9, 0, 0, 25)
+infoPlayer.Text = "User: " .. player.Name
+infoPlayer.TextSize = 14
+infoPlayer.Font = Enum.Font.Gotham
+infoPlayer.TextColor3 = Color3.fromRGB(200, 200, 200)
+infoPlayer.BackgroundTransparency = 1
+infoPlayer.Parent = infoContainer
+
+-- Hàm tạo dòng Text (Helper)
+local function createInfoLine(text, color, isTitle)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0.9, 0, 0, 22)
+    lbl.Text = text
+    lbl.TextSize = isTitle and 16 or 14
+    lbl.Font = isTitle and Enum.Font.GothamBold or Enum.Font.GothamSemibold
+    lbl.TextColor3 = color or Color3.new(1, 1, 1)
+    lbl.BackgroundTransparency = 1
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = infoContainer
+end
+
+createInfoLine("-------------------------------------------", Color3.fromRGB(100, 100, 100))
+
+-- 2. STANDS & ATTRIBUTES SECTION
+createInfoLine("⭐ KEEP STANDS", Color3.fromRGB(255, 200, 0), true)
+createInfoLine("  • DIO's The World", Color3.new(1, 1, 1))
+createInfoLine("  • (Stops when rolled)", Color3.fromRGB(150, 150, 150))
+
+createInfoLine("✨ KEEP ATTRIBUTES", Color3.fromRGB(0, 255, 150), true)
+for attr, _ in pairs(keepAttri) do
+    createInfoLine("  • " .. attr, Color3.new(1, 1, 1))
+end
+
+createInfoLine("-------------------------------------------", Color3.fromRGB(100, 100, 100))
+
+-- 3. MODULES DETAIL (Các tính năng chính)
+createInfoLine("🛠️ MODULES DETAIL", Color3.fromRGB(0, 180, 90), true)
+
+-- Auto Roll
+createInfoLine("● Auto Roll Module:", Color3.fromRGB(0, 120, 255))
+createInfoLine("   - Auto use Stand Arrow / Charged Arrow", Color3.fromRGB(180, 180, 180))
+createInfoLine("   - Auto use Rokakaka", Color3.fromRGB(180, 180, 180))
+
+-- Auto Lair
+createInfoLine("● Auto Lair Module:", Color3.fromRGB(0, 120, 255))
+createInfoLine("   - Fast NPC Quest Accept (Apex/Istabman)", Color3.fromRGB(180, 180, 180))
+createInfoLine("   - Smart Boss detection & Auto Kill", Color3.fromRGB(180, 180, 180))
+createInfoLine("   - Optimized Fly & Anti-Velocity", Color3.fromRGB(180, 180, 180))
+
+-- Auto Skill
+createInfoLine("● Auto Skill Module:", Color3.fromRGB(0, 120, 255))
+createInfoLine("   - Smart Hold E", Color3.fromRGB(180, 180, 180))
+createInfoLine("   - Rapid cycle: R, T, F, Z, X skills", Color3.fromRGB(180, 180, 180))
+
+-- Utilities
+createInfoLine("● Utilities:", Color3.fromRGB(0, 120, 255))
+createInfoLine("   - Throttled NoClip (Save performance)", Color3.fromRGB(180, 180, 180))
+createInfoLine("   - UI Protection (Anti-Deletor)", Color3.fromRGB(180, 180, 180))
+
+createInfoLine("-------------------------------------------", Color3.fromRGB(100, 100, 100))
+
+-- 4. HOTKEYS
+createInfoLine("⌨️ HOTKEYS", Color3.fromRGB(255, 80, 80), true)
+createInfoLine("  • [ L ] : Toggle Menu Visibility", Color3.new(1, 1, 1))
+
+-- Khoảng trống cuối trang để không bị sát mép
+local spacing = Instance.new("Frame")
+spacing.Size = UDim2.new(1, 0, 0, 20)
+spacing.BackgroundTransparency = 1
+spacing.Parent = infoContainer
 
 -- === TOGGLE + CHỌN ARROW BÊN PHẢI (trong rollContainer) ===
 createToggle(rollContainer, "AUTO ROLL", "AutoRoll")
