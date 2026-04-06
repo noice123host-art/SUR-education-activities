@@ -22,6 +22,7 @@ screenGui.Parent = ProtectGui
 -- === BIẾN HỆ THỐNG ===
 _G.AutoRoll = _G.AutoRoll or false
 _G.MainFarm = _G.MainFarm or false
+_G.ItemFarm = _G.ItemFarm or false
 _G.AutoSkillE = _G.AutoSkillE or false
 _G.AutoSkillR = _G.AutoSkillR or false
 _G.AutoSkillT = _G.AutoSkillT or false
@@ -34,6 +35,7 @@ local arrowOptions = {"Charged Arrow", "Stand Arrow"}
 local arrowName = arrowOptions[1]
 local keepAttri = {["Scourge"] = true, ["Hacker"] = true, ["Legendary"] = true, ["Glass Cannon"] = true}
 local flySpeed = 150 
+local itemFarmSpeed = 300
 local currentTween = nil
 local POS_MAIN_STABMAN = Vector3.new(-40.3, 67.1, -468.7) 
 local POS_APEX = Vector3.new(-312.9, 66.8, 144.7)
@@ -97,6 +99,16 @@ skillContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 skillContainer.Parent = rightFrame
 skillContainer.Visible = false
 
+local itemContainer = Instance.new("ScrollingFrame")
+itemContainer.Size = UDim2.new(1, -10, 1, -10)
+itemContainer.Position = UDim2.new(0, 5, 0, 5)
+itemContainer.BackgroundTransparency = 1
+itemContainer.ScrollBarThickness = 4
+itemContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+itemContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+itemContainer.Parent = rightFrame
+itemContainer.Visible = false
+
 -- Layouts
 local function addLayout(parent, padding)
     local layout = Instance.new("UIListLayout", parent)
@@ -107,6 +119,7 @@ addLayout(infoContainer, 8)
 addLayout(rollContainer, 12)
 addLayout(lairContainer, 12)
 addLayout(skillContainer, 10)
+addLayout(itemContainer, 10)
 
 -- === NỘI DUNG TRANG INFO ===
 local function addInfoText(txt, color, font, size)
@@ -138,6 +151,7 @@ addInfoText("🛠️ MODULES DETAIL", Color3.fromRGB(0, 180, 90), Enum.Font.Goth
 addInfoText("● Auto Roll: Automatic Arrows and Rokakaka", Color3.fromRGB(180, 180, 180))
 addInfoText("● Auto Lair: Boss Kill & NPC Quest Farm.", Color3.fromRGB(180, 180, 180))
 addInfoText("● Auto Skill: Hold E & Spam E,R,T,F,Z,X", Color3.fromRGB(180, 180, 180))
+addInfoText("● Item Farm: Auto collect items", Color3.fromRGB(180, 180, 180))
 addInfoText("-------------------------------------------", Color3.fromRGB(80, 80, 80))
 addInfoText("⌨️ HOTKEYS", Color3.fromRGB(255, 80, 80), Enum.Font.GothamBold, 16)
 addInfoText("  • [ L ] : Toggle Menu Visibility", Color3.new(1, 1, 1))
@@ -148,6 +162,7 @@ local function showPage(page)
     rollContainer.Visible = false
     lairContainer.Visible = false
     skillContainer.Visible = false
+    itemContainer.Visible = false
     page.Visible = true
 end
 
@@ -168,6 +183,7 @@ createMenuBtn("Info", infoContainer)
 createMenuBtn("Auto Roll", rollContainer)
 createMenuBtn("Auto Lair", lairContainer)
 createMenuBtn("Auto Skill", skillContainer)
+createMenuBtn("Item Farm", itemContainer)
 
 -- === HÀM TẠO TOGGLE ===
 local function createToggle(parent, txt, globalVar)
@@ -309,6 +325,86 @@ createToggle(skillContainer, "SKILL T", "AutoSkillT")
 createToggle(skillContainer, "SKILL F", "AutoSkillF")
 createToggle(skillContainer, "SKILL Z", "AutoSkillZ")
 createToggle(skillContainer, "SKILL X", "AutoSkillX")
+
+-- === THIẾT LẬP TRANG ITEM FARM ===
+createToggle(itemContainer, "ITEM FARM", "ItemFarm")
+
+-- Speed Slider
+local speedHolder = Instance.new("Frame")
+speedHolder.Size = UDim2.new(0.92, 0, 0, 90)
+speedHolder.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+speedHolder.Parent = itemContainer
+Instance.new("UICorner", speedHolder).CornerRadius = UDim.new(0, 10)
+
+local speedTitle = Instance.new("TextLabel")
+speedTitle.Size = UDim2.new(1, 0, 0, 25)
+speedTitle.Position = UDim2.new(0, 15, 0, 5)
+speedTitle.Text = "FLY SPEED: " .. tostring(itemFarmSpeed)
+speedTitle.TextSize = 14
+speedTitle.Font = Enum.Font.GothamBold
+speedTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+speedTitle.BackgroundTransparency = 1
+speedTitle.TextXAlignment = Enum.TextXAlignment.Left
+speedTitle.Parent = speedHolder
+
+local sliderBg = Instance.new("Frame")
+sliderBg.Size = UDim2.new(0.9, 0, 0, 8)
+sliderBg.Position = UDim2.new(0.05, 0, 0, 45)
+sliderBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+sliderBg.Parent = speedHolder
+Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
+
+local sliderFill = Instance.new("Frame")
+sliderFill.Size = UDim2.new((itemFarmSpeed - 50) / 950, 0, 1, 0)
+sliderFill.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+sliderFill.Parent = sliderBg
+Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
+
+local sliderKnob = Instance.new("Frame")
+sliderKnob.Size = UDim2.new(0, 18, 0, 18)
+sliderKnob.Position = UDim2.new((itemFarmSpeed - 50) / 950, -9, 0.5, -9)
+sliderKnob.BackgroundColor3 = Color3.new(1, 1, 1)
+sliderKnob.Parent = sliderBg
+Instance.new("UICorner", sliderKnob).CornerRadius = UDim.new(1, 0)
+
+local sliderBtn = Instance.new("TextButton")
+sliderBtn.Size = UDim2.new(1, 0, 0, 30)
+sliderBtn.Position = UDim2.new(0, 0, 0, 35)
+sliderBtn.BackgroundTransparency = 1
+sliderBtn.Text = ""
+sliderBtn.Parent = speedHolder
+
+local dragging = false
+sliderBtn.MouseButton1Down:Connect(function() dragging = true end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local absPos = sliderBg.AbsolutePosition.X
+        local absSize = sliderBg.AbsoluteSize.X
+        local mouseX = input.Position.X
+        local pct = math.clamp((mouseX - absPos) / absSize, 0, 1)
+        itemFarmSpeed = math.floor(50 + pct * 950)
+        speedTitle.Text = "FLY SPEED: " .. tostring(itemFarmSpeed)
+        sliderFill.Size = UDim2.new(pct, 0, 1, 0)
+        sliderKnob.Position = UDim2.new(pct, -9, 0.5, -9)
+    end
+end)
+
+-- Status Label
+local itemStatusLabel = Instance.new("TextLabel")
+itemStatusLabel.Size = UDim2.new(0.92, 0, 0, 30)
+itemStatusLabel.BackgroundTransparency = 1
+itemStatusLabel.Text = "Status: Idle"
+itemStatusLabel.TextColor3 = Color3.fromRGB(150, 255, 150)
+itemStatusLabel.Font = Enum.Font.GothamSemibold
+itemStatusLabel.TextSize = 14
+itemStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+itemStatusLabel.Parent = itemContainer
+
 
 -- ====================== LOGIC HỆ THỐNG ======================
 
@@ -523,10 +619,18 @@ task.spawn(function()
     end
 end)
 
--- 4. Hệ thống (NoClip & Hotkey L)
+-- ====================== 4. NOCLIP (THROTTLED) ======================
+local noClipTick = 0
 RunService.Stepped:Connect(function()
-    if (_G.MainFarm or _G.AutoRoll) and player.Character then
-        for _, v in pairs(player.Character:GetChildren()) do 
+    if not _G.MainFarm and not _G.AutoRoll and not _G.ItemFarm then return end
+    
+    noClipTick = noClipTick + 1
+    if noClipTick < 6 then return end
+    noClipTick = 0
+    
+    local char = player.Character
+    if char then
+        for _, v in pairs(char:GetChildren()) do 
             if v:IsA("BasePart") then 
                 v.CanCollide = false 
             end 
@@ -534,6 +638,88 @@ RunService.Stepped:Connect(function()
     end
 end)
 
+-- ====================== 5. ITEM FARM ======================
+
+-- Anti-idle: phá Root joint để không bị kick
+task.spawn(function()
+    while task.wait(0.3) do
+        if _G.ItemFarm then
+            pcall(function()
+                local char = player.Character
+                if char and char:FindFirstChild("LowerTorso") then
+                    local root = char.LowerTorso:FindFirstChild("Root")
+                    if root then root:Destroy() end
+                end
+            end)
+        end
+    end
+end)
+
+-- Item collection loop
+task.spawn(function()
+    while task.wait(0.5) do
+        if not _G.ItemFarm then 
+            itemStatusLabel.Text = "Status: Idle"
+            continue 
+        end
+        
+        pcall(function()
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+            
+            local itemsFolder = workspace:FindFirstChild("Items")
+            if not itemsFolder then 
+                itemStatusLabel.Text = "Status: No Items folder found"
+                return 
+            end
+            
+            local items = itemsFolder:GetChildren()
+            if #items == 0 then
+                itemStatusLabel.Text = "Status: No items - waiting..."
+                return
+            end
+            
+            itemStatusLabel.Text = "Status: Collecting (" .. #items .. " items)"
+            
+            for _, item in pairs(items) do
+                if not _G.ItemFarm then break end
+                
+                local targetPart = item:FindFirstChildOfClass("MeshPart") or item:FindFirstChildOfClass("Part")
+                if targetPart then
+                    local dist = (targetPart.Position - hrp.Position).Magnitude
+                    local tweenTime = dist / itemFarmSpeed
+                    
+                    -- Tween bay đến item
+                    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                    local tween = TweenService:Create(hrp, tweenInfo, { CFrame = targetPart.CFrame })
+                    tween:Play()
+                    
+                    itemStatusLabel.Text = "Status: Flying to " .. item.Name
+                    
+                    -- Chờ đến gần hoặc timeout
+                    local startTick = tick()
+                    repeat 
+                        task.wait(0.1) 
+                    until not _G.ItemFarm 
+                        or not targetPart or not targetPart.Parent
+                        or (hrp.Position - targetPart.Position).Magnitude <= 15
+                        or (tick() - startTick) > (tweenTime + 2)
+                    
+                    tween:Cancel()
+                    
+                    -- Snap đến vị trí item
+                    if targetPart and targetPart.Parent and _G.ItemFarm then
+                        hrp.CFrame = targetPart.CFrame
+                        task.wait(0.3)
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- ====================== 6. HOTKEY ======================
 UserInputService.InputBegan:Connect(function(i, g)
     if not g and i.KeyCode == Enum.KeyCode.L then 
         mainFrame.Visible = not mainFrame.Visible 
