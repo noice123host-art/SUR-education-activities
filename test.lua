@@ -141,6 +141,7 @@ end
 
 addInfoText("AegisVN SUR Beta1.2a32", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
 addInfoText("Welcome " .. player.Name, Color3.fromRGB(200, 200, 200))
+addInfoText("Made in VietNam 🇻🇳", Color3.fromRGB(255, 50, 50))
 addInfoText("-------------------------------------------", Color3.fromRGB(80, 80, 80))
 
 addInfoText("⭐ KEEP STANDS", Color3.fromRGB(255, 200, 0), Enum.Font.GothamBold, 16)
