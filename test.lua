@@ -420,40 +420,66 @@
     itemStatusLabel.Parent = itemContainer
 
 -- === THIẾT LẬP TRANG SERVER ===
-local function SmallServerHop()
+local function SmallServerHop(statusLabel)
     local placeId = game.PlaceId
     local foundAnything = ""
-    local site
     
-    -- Chạy vòng lặp tìm server vắng
+    -- API đã sort Asc = ít người nhất lên đầu
+    -- Nên chỉ cần nhảy vào server đầu tiên (không phải server hiện tại)
     pcall(function()
-        if foundAnything == "" then
-            site = game.HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"))
-        else
-            site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. placeId .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
-        end
+        local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+        local site = game.HttpService:JSONDecode(game:HttpGet(url))
         
-        if site.nextPageCursor and site.nextPageCursor ~= "null" and site.nextPageCursor ~= nil then
-            foundAnything = site.nextPageCursor
-        end
-        
-        for i,v in pairs(site.data) do
+        for i, v in pairs(site.data) do
             local id = tostring(v.id)
-            -- Kiểm tra server hiện tại để không teleport lại chính nó nếu được
-            if id ~= game.JobId and tonumber(v.playing) <= 3 then
+            local playerCount = tonumber(v.playing)
+            
+            -- Bỏ qua server hiện tại
+            if id ~= game.JobId then
+                if statusLabel then
+                    statusLabel.Text = "Found: " .. playerCount .. " players → Teleporting..."
+                end
                 pcall(function()
                     game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, id, game.Players.LocalPlayer) 
                 end)
-                task.wait(2)
+                task.wait(4)
+                return -- Chỉ cần teleport 1 server
+            end
+        end
+        
+        -- Nếu không tìm được, thử trang tiếp theo
+        if site.nextPageCursor and site.nextPageCursor ~= "null" then
+            local url2 = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100&cursor=" .. site.nextPageCursor
+            local site2 = game.HttpService:JSONDecode(game:HttpGet(url2))
+            for i, v in pairs(site2.data) do
+                local id = tostring(v.id)
+                if id ~= game.JobId then
+                    pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, id, game.Players.LocalPlayer) 
+                    end)
+                    task.wait(4)
+                    return
+                end
             end
         end
     end)
 end
 
+-- Status label cho Server page
+local serverStatusLabel = Instance.new("TextLabel")
+serverStatusLabel.Size = UDim2.new(0.92, 0, 0, 25)
+serverStatusLabel.BackgroundTransparency = 1
+serverStatusLabel.Text = "Nhảy đến server ít người nhất"
+serverStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+serverStatusLabel.Font = Enum.Font.GothamSemibold
+serverStatusLabel.TextSize = 13
+serverStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+serverStatusLabel.Parent = serverContainer
+
 local hopBtn = Instance.new("TextButton")
 hopBtn.Size = UDim2.new(0.92, 0, 0, 50)
 hopBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-hopBtn.Text = "HOP SMALL SERVER (<= 3)"
+hopBtn.Text = "HOP TO SMALLEST SERVER"
 hopBtn.Font = Enum.Font.GothamBold
 hopBtn.TextColor3 = Color3.new(1, 1, 1)
 hopBtn.TextSize = 16
@@ -463,10 +489,14 @@ Instance.new("UICorner", hopBtn).CornerRadius = UDim.new(0, 8)
 hopBtn.MouseButton1Click:Connect(function()
     hopBtn.Text = "SEARCHING..."
     hopBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-    SmallServerHop()
-    task.wait(1)
-    hopBtn.Text = "HOP SMALL SERVER (<= 3)"
+    serverStatusLabel.Text = "Đang tìm server..."
+    serverStatusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+    SmallServerHop(serverStatusLabel)
+    task.wait(2)
+    hopBtn.Text = "HOP TO SMALLEST SERVER"
     hopBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    serverStatusLabel.Text = "Nhảy đến server ít người nhất"
+    serverStatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 end)
 
 
