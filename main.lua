@@ -121,7 +121,7 @@ local function addInfoText(txt, color, font, size)
     label.Parent = infoContainer
 end
 
-addInfoText("Aegis SUR v1", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
+addInfoText("AegisVN SUR v1", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
 addInfoText("Welcome " .. player.Name, Color3.fromRGB(200, 200, 200))
 addInfoText("-------------------------------------------", Color3.fromRGB(80, 80, 80))
 
