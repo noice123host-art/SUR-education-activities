@@ -121,8 +121,8 @@ local function addInfoText(txt, color, font, size)
     label.Parent = infoContainer
 end
 
-addInfoText("Stand Upright: Rebooted Script", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
-addInfoText("User: " .. player.Name, Color3.fromRGB(200, 200, 200))
+addInfoText("Aegis SUR v1", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
+addInfoText("Welcome " .. player.Name, Color3.fromRGB(200, 200, 200))
 addInfoText("-------------------------------------------", Color3.fromRGB(80, 80, 80))
 
 addInfoText("⭐ KEEP STANDS", Color3.fromRGB(255, 200, 0), Enum.Font.GothamBold, 16)
