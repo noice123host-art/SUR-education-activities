@@ -145,7 +145,7 @@
         label.Parent = infoContainer
     end
 
-    addInfoText("AegisVN SUR beta v1a251", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
+    addInfoText("Stand Upright: Rebooted Script", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
     addInfoText("Welcome " .. player.Name, Color3.fromRGB(200, 200, 200))
     addInfoText("Made in VietNam 🇻🇳", Color3.fromRGB(255, 50, 50))
     addInfoText("-------------------------------------------", Color3.fromRGB(80, 80, 80))
@@ -779,15 +779,16 @@ end)
 
     -- ====================== 5. ITEM FARM ======================
 
-    -- Anti-idle: phá Root joint để không bị kick
+    -- Anti-idle: giữ character active (KHÔNG phá Root joint - sẽ gây xuất hồn)
     task.spawn(function()
-        while task.wait(0.3) do
+        while task.wait(3) do
             if _G.ItemFarm then
                 pcall(function()
                     local char = player.Character
-                    if char and char:FindFirstChild("LowerTorso") then
-                        local root = char.LowerTorso:FindFirstChild("Root")
-                        if root then root:Destroy() end
+                    if char and char:FindFirstChild("Humanoid") then
+                        char.Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+                        task.wait(0.1)
+                        char.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
                     end
                 end)
             end
