@@ -145,8 +145,8 @@
         label.Parent = infoContainer
     end
 
-    addInfoText("Stand Upright: Rebooted Script", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
-    addInfoText("User: " .. player.Name, Color3.fromRGB(200, 200, 200))
+    addInfoText("AegisVN SUR v1", Color3.fromRGB(0, 120, 255), Enum.Font.GothamBold, 18)
+    addInfoText("Welcome " .. player.Name, Color3.fromRGB(200, 200, 200))
     addInfoText("Made in VietNam 🇻🇳", Color3.fromRGB(255, 50, 50))
     addInfoText("-------------------------------------------", Color3.fromRGB(80, 80, 80))
 
