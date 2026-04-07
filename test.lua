@@ -430,88 +430,7 @@
     itemStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     itemStatusLabel.Parent = itemContainer
 
-    -- ================== BỘ LỌC ITEM TỪ TỪ VFX ==================
-    _G.ItemFarmFilters = _G.ItemFarmFilters or {}
-    
-    local function createItemFilterToggle(parent, itemName)
-        _G.ItemFarmFilters[itemName] = false
 
-        local holder = Instance.new("Frame")
-        holder.Size = UDim2.new(0.92, 0, 0, 45)
-        holder.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-        holder.Parent = parent
-        Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 8)
-        
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(0.6, 0, 1, 0)
-        label.Position = UDim2.new(0, 15, 0, 0)
-        label.Text = itemName
-        label.TextSize = 14
-        label.Font = Enum.Font.GothamSemibold
-        label.TextColor3 = Color3.new(1, 1, 1)
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.BackgroundTransparency = 1
-        label.Parent = holder
-        
-        local switchBg = Instance.new("Frame")
-        switchBg.Size = UDim2.new(0, 45, 0, 22)
-        switchBg.Position = UDim2.new(1, -60, 0.5, -11)
-        switchBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        switchBg.Parent = holder
-        Instance.new("UICorner", switchBg).CornerRadius = UDim.new(1, 0)
-        
-        local switchCircle = Instance.new("Frame")
-        switchCircle.Size = UDim2.new(0, 18, 0, 18)
-        switchCircle.Position = UDim2.new(0, 2, 0.5, -9)
-        switchCircle.BackgroundColor3 = Color3.new(1, 1, 1)
-        switchCircle.Parent = switchBg
-        Instance.new("UICorner", switchCircle).CornerRadius = UDim.new(1, 0)
-
-        local clickBtn = Instance.new("TextButton")
-        clickBtn.Size = UDim2.new(1, 0, 1, 0)
-        clickBtn.BackgroundTransparency = 1
-        clickBtn.Text = ""
-        clickBtn.ZIndex = 10
-        clickBtn.Parent = holder
-        
-        clickBtn.MouseButton1Click:Connect(function()
-            _G.ItemFarmFilters[itemName] = not _G.ItemFarmFilters[itemName]
-            local isOn = _G.ItemFarmFilters[itemName]
-            local targetColor = isOn and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(60, 60, 60)
-            local targetPos = isOn and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
-            TweenService:Create(switchBg, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
-            TweenService:Create(switchCircle, TweenInfo.new(0.2), {Position = targetPos}):Play()
-        end)
-    end
-
-    local filterTitle = Instance.new("TextLabel")
-    filterTitle.Size = UDim2.new(0.92, 0, 0, 30)
-    filterTitle.Text = "--- CHỌN ITEM CẦN NHẶT TỪ VFX ---"
-    filterTitle.TextColor3 = Color3.fromRGB(255, 200, 0)
-    filterTitle.Font = Enum.Font.GothamBold
-    filterTitle.TextSize = 14
-    filterTitle.BackgroundTransparency = 1
-    filterTitle.Parent = itemContainer
-
-    local vfxFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Vfx") or workspace:FindFirstChild("Vfx") or game:GetService("Lighting"):FindFirstChild("Vfx")
-    if vfxFolder then
-        local uniqueItems = {}
-        for _, child in pairs(vfxFolder:GetChildren()) do
-            if not uniqueItems[child.Name] then
-                uniqueItems[child.Name] = true
-                createItemFilterToggle(itemContainer, child.Name)
-            end
-        end
-    else
-        local errLbl = Instance.new("TextLabel")
-        errLbl.Size = UDim2.new(0.92, 0, 0, 25)
-        errLbl.Text = "(Không thể tìm thấy thư mục Vfx trong game)"
-        errLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
-        errLbl.Font = Enum.Font.GothamSemibold
-        errLbl.TextSize = 12
-        errLbl.BackgroundTransparency = 1
-        errLbl.Parent = itemContainer
-    end
 
 -- === THIẾT LẬP TRANG SERVER ===
 local function SmallServerHop(statusLabel)
@@ -978,26 +897,9 @@ end)
                     local targetPart = prompt.Parent
                     if not targetPart:IsA("BasePart") then continue end
 
-                    -- Xác định tên item
-                    local itemModel = targetPart
-                    if targetPart.Name == "ItemPromptHolder" and targetPart.Parent then
-                        itemModel = targetPart.Parent
-                    else
-                        itemModel = targetPart:FindFirstAncestorOfClass("Model") or targetPart
-                    end
-                    local itemName = itemModel.Name
-                    
-                    -- KIỂM TRA BỘ LỌC
-                    local hasFilterOn = false
-                    if _G.ItemFarmFilters then
-                        for _, isOn in pairs(_G.ItemFarmFilters) do
-                            if isOn then hasFilterOn = true break end
-                        end
-                    end
-                    
-                    if hasFilterOn and not _G.ItemFarmFilters[itemName] then
-                        continue
-                    end
+                    -- Lấy tên item để in ra Status
+                    local model = targetPart:FindFirstAncestorOfClass("Model")
+                    local itemName = model and model.Name or targetPart.Name
                     
                     -- Tween bay đến phía trên item (offset Y += 3)
                     local targetCFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
