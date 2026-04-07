@@ -14,6 +14,17 @@
         ProtectGui.RebootedMenu:Destroy() 
     end
 
+    -- ====================== INSTANT PROMPT (LỤM SIÊU NHANH) ======================
+    ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+        pcall(function()
+            if fireproximityprompt then
+                fireproximityprompt(prompt, math.huge)
+            else
+                prompt.HoldDuration = 0
+            end
+        end)
+    end)
+
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "RebootedMenu"
     screenGui.ResetOnSpawn = false 
@@ -419,6 +430,89 @@
     itemStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     itemStatusLabel.Parent = itemContainer
 
+    -- ================== BỘ LỌC ITEM TỪ TỪ VFX ==================
+    _G.ItemFarmFilters = _G.ItemFarmFilters or {}
+    
+    local function createItemFilterToggle(parent, itemName)
+        _G.ItemFarmFilters[itemName] = false
+
+        local holder = Instance.new("Frame")
+        holder.Size = UDim2.new(0.92, 0, 0, 45)
+        holder.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        holder.Parent = parent
+        Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 8)
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.6, 0, 1, 0)
+        label.Position = UDim2.new(0, 15, 0, 0)
+        label.Text = itemName
+        label.TextSize = 14
+        label.Font = Enum.Font.GothamSemibold
+        label.TextColor3 = Color3.new(1, 1, 1)
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.BackgroundTransparency = 1
+        label.Parent = holder
+        
+        local switchBg = Instance.new("Frame")
+        switchBg.Size = UDim2.new(0, 45, 0, 22)
+        switchBg.Position = UDim2.new(1, -60, 0.5, -11)
+        switchBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        switchBg.Parent = holder
+        Instance.new("UICorner", switchBg).CornerRadius = UDim.new(1, 0)
+        
+        local switchCircle = Instance.new("Frame")
+        switchCircle.Size = UDim2.new(0, 18, 0, 18)
+        switchCircle.Position = UDim2.new(0, 2, 0.5, -9)
+        switchCircle.BackgroundColor3 = Color3.new(1, 1, 1)
+        switchCircle.Parent = switchBg
+        Instance.new("UICorner", switchCircle).CornerRadius = UDim.new(1, 0)
+
+        local clickBtn = Instance.new("TextButton")
+        clickBtn.Size = UDim2.new(1, 0, 1, 0)
+        clickBtn.BackgroundTransparency = 1
+        clickBtn.Text = ""
+        clickBtn.ZIndex = 10
+        clickBtn.Parent = holder
+        
+        clickBtn.MouseButton1Click:Connect(function()
+            _G.ItemFarmFilters[itemName] = not _G.ItemFarmFilters[itemName]
+            local isOn = _G.ItemFarmFilters[itemName]
+            local targetColor = isOn and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(60, 60, 60)
+            local targetPos = isOn and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+            TweenService:Create(switchBg, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
+            TweenService:Create(switchCircle, TweenInfo.new(0.2), {Position = targetPos}):Play()
+        end)
+    end
+
+    local filterTitle = Instance.new("TextLabel")
+    filterTitle.Size = UDim2.new(0.92, 0, 0, 30)
+    filterTitle.Text = "--- CHỌN ITEM CẦN NHẶT TỪ VFX ---"
+    filterTitle.TextColor3 = Color3.fromRGB(255, 200, 0)
+    filterTitle.Font = Enum.Font.GothamBold
+    filterTitle.TextSize = 14
+    filterTitle.BackgroundTransparency = 1
+    filterTitle.Parent = itemContainer
+
+    local vfxFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Vfx") or workspace:FindFirstChild("Vfx") or game:GetService("Lighting"):FindFirstChild("Vfx")
+    if vfxFolder then
+        local uniqueItems = {}
+        for _, child in pairs(vfxFolder:GetChildren()) do
+            if not uniqueItems[child.Name] then
+                uniqueItems[child.Name] = true
+                createItemFilterToggle(itemContainer, child.Name)
+            end
+        end
+    else
+        local errLbl = Instance.new("TextLabel")
+        errLbl.Size = UDim2.new(0.92, 0, 0, 25)
+        errLbl.Text = "(Không thể tìm thấy thư mục Vfx trong game)"
+        errLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+        errLbl.Font = Enum.Font.GothamSemibold
+        errLbl.TextSize = 12
+        errLbl.BackgroundTransparency = 1
+        errLbl.Parent = itemContainer
+    end
+
 -- === THIẾT LẬP TRANG SERVER ===
 local function SmallServerHop(statusLabel)
     local placeId = game.PlaceId
@@ -779,81 +873,179 @@ end)
 
     -- ====================== 5. ITEM FARM ======================
 
-    -- Anti-idle: giữ character active (KHÔNG phá Root joint - sẽ gây xuất hồn)
-    task.spawn(function()
-        while task.wait(3) do
-            if _G.ItemFarm then
-                pcall(function()
-                    local char = player.Character
-                    if char and char:FindFirstChild("Humanoid") then
-                        char.Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-                        task.wait(0.1)
-                        char.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
-                    end
-                end)
+    -- Theo dõi Prompt để tối ưu hiệu năng (Tham khảo logic từ user)
+    local trackedItemPrompts = {}
+
+    local function watchPrompts(parent)
+        if not parent then return end
+        
+        -- Quét trước các ProximityPrompt có sẵn
+        for _, v in ipairs(parent:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+                trackedItemPrompts[v] = true
             end
         end
-    end)
 
-    -- Item collection loop
+        -- Lắng nghe event khi có item mới rơi ra
+        parent.DescendantAdded:Connect(function(desc)
+            if desc:IsA("ProximityPrompt") then
+                trackedItemPrompts[desc] = true
+            end
+        end)
+    end
+
+    -- Khởi tạo theo dõi các thư mục quan trọng (bao gồm cả Vfx)
+    local function setupPromptTracking()
+        local wsItems = workspace:FindFirstChild("Items")
+        local wsVfx = workspace:FindFirstChild("Vfx")
+        local wsDebris = workspace:FindFirstChild("Debris")
+        local wsMaps = workspace:FindFirstChild("Maps")
+        local mapsItemFolder = wsMaps and wsMaps:FindFirstChild("ItemsFolder")
+
+        watchPrompts(wsItems)
+        watchPrompts(wsVfx)
+        watchPrompts(wsDebris)
+        watchPrompts(mapsItemFolder)
+    end
+    setupPromptTracking()
+
+    -- Dọn dẹp bộ nhớ những prompt đã mất
+    local function cleanTrackedPrompts()
+        for p, _ in pairs(trackedItemPrompts) do
+            if not p or not p.Parent or not p:IsDescendantOf(workspace) then
+                trackedItemPrompts[p] = nil
+            end
+        end
+    end
+
+    -- Hàm khôi phục character về trạng thái bình thường
+    local function restoreCharacter()
+        pcall(function()
+            local char = player.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            local hum = char:FindFirstChild("Humanoid")
+            if hrp then hrp.Anchored = false end
+            if hum then hum.PlatformStand = false end
+        end)
+    end
+
+    -- Vòng lặp xử lý auto nhặt item (Sử dụng bảng trackedItemPrompts)
     task.spawn(function()
-        while task.wait(0.5) do
+        local wasItemFarm = false
+        while task.wait(0.2) do
+            if wasItemFarm and not _G.ItemFarm then
+                restoreCharacter()
+                itemStatusLabel.Text = "Status: Idle"
+                wasItemFarm = false
+                continue
+            end
+
             if not _G.ItemFarm then 
                 itemStatusLabel.Text = "Status: Idle"
                 continue 
             end
+            wasItemFarm = true
             
             pcall(function()
                 local char = player.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") then return end
                 local hrp = char.HumanoidRootPart
+                local hum = char:FindFirstChild("Humanoid")
+                if not hum or hum.Health <= 0 then return end
                 
-                local itemsFolder = workspace:FindFirstChild("Items")
-                if not itemsFolder then 
-                    itemStatusLabel.Text = "Status: No Items folder found"
-                    return 
-                end
+                cleanTrackedPrompts()
+
+                local activeItems = 0
+                for _ in pairs(trackedItemPrompts) do activeItems = activeItems + 1 end
                 
-                local items = itemsFolder:GetChildren()
-                if #items == 0 then
-                    itemStatusLabel.Text = "Status: No items - waiting..."
+                if activeItems == 0 then
+                    itemStatusLabel.Text = "Status: No items - scanning..."
+                    restoreCharacter() -- Nhả khoá để bạn có thể tự do di chuyển khi không có item
                     return
                 end
                 
-                itemStatusLabel.Text = "Status: Collecting (" .. #items .. " items)"
+                -- Anchor HRP + PlatformStand (Chỉ khoá khi đã thấy đồ và chuẩn bị bay đi)
+                hrp.Anchored = true
+                hum.PlatformStand = true
                 
-                for _, item in pairs(items) do
+                itemStatusLabel.Text = "Status: Collecting (" .. activeItems .. " tracked)"
+                
+                for prompt, _ in pairs(trackedItemPrompts) do
                     if not _G.ItemFarm then break end
+                    if not prompt or not prompt.Parent then continue end
                     
-                    local targetPart = item:FindFirstChildOfClass("MeshPart") or item:FindFirstChildOfClass("Part")
-                    if targetPart then
-                        local dist = (targetPart.Position - hrp.Position).Magnitude
-                        local tweenTime = dist / itemFarmSpeed
-                        
-                        -- Tween bay đến item
-                        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-                        local tween = TweenService:Create(hrp, tweenInfo, { CFrame = targetPart.CFrame })
-                        tween:Play()
-                        
-                        itemStatusLabel.Text = "Status: Flying to " .. item.Name
-                        
-                        -- Chờ đến gần hoặc timeout
-                        local startTick = tick()
-                        repeat 
-                            task.wait(0.1) 
-                        until not _G.ItemFarm 
-                            or not targetPart or not targetPart.Parent
-                            or (hrp.Position - targetPart.Position).Magnitude <= 15
-                            or (tick() - startTick) > (tweenTime + 2)
-                        
-                        tween:Cancel()
-                        
-                        -- Snap đến vị trí item
-                        if targetPart and targetPart.Parent and _G.ItemFarm then
-                            hrp.CFrame = targetPart.CFrame
-                            task.wait(0.3)
+                    local targetPart = prompt.Parent
+                    if not targetPart:IsA("BasePart") then continue end
+
+                    -- Xác định tên item
+                    local itemModel = targetPart
+                    if targetPart.Name == "ItemPromptHolder" and targetPart.Parent then
+                        itemModel = targetPart.Parent
+                    else
+                        itemModel = targetPart:FindFirstAncestorOfClass("Model") or targetPart
+                    end
+                    local itemName = itemModel.Name
+                    
+                    -- KIỂM TRA BỘ LỌC
+                    local hasFilterOn = false
+                    if _G.ItemFarmFilters then
+                        for _, isOn in pairs(_G.ItemFarmFilters) do
+                            if isOn then hasFilterOn = true break end
                         end
                     end
+                    
+                    if hasFilterOn and not _G.ItemFarmFilters[itemName] then
+                        continue
+                    end
+                    
+                    -- Tween bay đến phía trên item (offset Y += 3)
+                    local targetCFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
+                    local dist = (targetCFrame.Position - hrp.Position).Magnitude
+                    local tweenTime = dist / itemFarmSpeed
+                    
+                    hrp.Anchored = true
+                    
+                    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
+                    local tween = TweenService:Create(hrp, tweenInfo, { CFrame = targetCFrame })
+                    tween:Play()
+                    
+                    itemStatusLabel.Text = "Status: Flying to " .. itemName
+                    
+                    local startTick = tick()
+                    repeat 
+                        task.wait(0.1) 
+                    until not _G.ItemFarm 
+                        or not targetPart or not targetPart.Parent
+                        or (hrp.Position - targetCFrame.Position).Magnitude <= 5
+                        or (tick() - startTick) > (tweenTime + 1.5)
+                    
+                    tween:Cancel()
+                    
+                    -- Dừng lại và kích hoạt prompt
+                    if targetPart and targetPart.Parent and _G.ItemFarm and prompt and prompt.Parent then
+                        hrp.CFrame = targetCFrame
+                        task.wait(0.05) -- Đợi server ghi nhận vị trí an toàn
+                        
+                        local oldDist = prompt.MaxActivationDistance
+                        prompt.MaxActivationDistance = 9999
+                        if fireproximityprompt then
+                            pcall(function() fireproximityprompt(prompt, math.huge) end)
+                        else
+                            pcall(function()
+                                prompt:InputHoldBegin()
+                                task.wait(prompt.HoldDuration + 0.1)
+                                prompt:InputHoldEnd()
+                            end)
+                        end
+                        pcall(function() prompt.MaxActivationDistance = oldDist end)
+                        
+                        task.wait(0.2)
+                    end
+                end
+                
+                if not _G.ItemFarm then
+                    restoreCharacter()
                 end
             end)
         end
