@@ -527,32 +527,39 @@ end)
 
     -- 1. Auto Roll Stand
     task.spawn(function()
-        while task.wait(0.7) do
-            if _G.AutoRoll then
-                pcall(function()
-                    local data = player:FindFirstChild("Data")
-                    local stand = data:FindFirstChild("Stand")
-                    local attr = data:FindFirstChild("Attri")
-                    if standData and (standData.Value == "DIO's The World" or (attriData and keepAttri[attriData.Value])) then
-                        _G.AutoRoll = false return
-                    end
-                    local toolName = (not stand or stand.Value == "" or stand.Value == "None") and arrowName or "Rokakaka"
-                    local tool = player.Backpack:FindFirstChild(toolName) or player.Character:FindFirstChild(toolName)
-                    if tool then
-                        player.Character.Humanoid:EquipTool(tool)
-                        tool:Activate()
-                        if toolName == "Rokakaka" then 
-                            task.wait(0.4)
-                            for _, v in pairs(playerGui:GetDescendants()) do 
-                                if v:IsA("TextButton") and v.Visible and (v.Text:lower():find("yes") or v.Text:lower():find("accept")) then v:Activate() end 
+    while task.wait(0.7) do
+        if _G.AutoRoll then
+            pcall(function()
+                local data = player:FindFirstChild("Data")
+                local stand = data:FindFirstChild("Stand")
+                local attr = data:FindFirstChild("Attri")
+                
+                -- Đã thêm Star Platinum OVA và Jotaro's Star Platinum vào điều kiện giữ lại
+                if stand and (stand.Value == "DIO's The World" or stand.Value == "Star Platinum OVA" or stand.Value == "Jotaro's Star Platinum" or (attr and keepAttri[attr.Value])) then
+                    _G.AutoRoll = false 
+                    return
+                end
+                
+                local toolName = (not stand or stand.Value == "" or stand.Value == "None") and arrowName or "Rokakaka"
+                local tool = player.Backpack:FindFirstChild(toolName) or player.Character:FindFirstChild(toolName)
+                
+                if tool then
+                    player.Character.Humanoid:EquipTool(tool)
+                    tool:Activate()
+                    
+                    if toolName == "Rokakaka" then 
+                        task.wait(0.4)
+                        for _, v in pairs(playerGui:GetDescendants()) do 
+                            if v:IsA("TextButton") and v.Visible and (v.Text:lower():find("yes") or v.Text:lower():find("accept")) then 
+                                v:Activate() 
                             end 
-                        end
+                        end 
                     end
-                end)
-            end
+                end
+            end)
         end
-    end)
-
+    end
+end)
     -- ====================== FUNCTION SUMMON STAND ======================
     local function handleStandLogic(char)
         local aura = char:FindFirstChild("Aura")
